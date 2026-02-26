@@ -14,7 +14,9 @@ struct SlowQApp: App {
 
     var body: some Scene {
         MenuBarExtra("SlowQ", systemImage: coordinator.menuBarSymbolName) {
-            MenuContentView(coordinator: coordinator)
+            MenuContentView(coordinator: coordinator) {
+                coordinator.showSettings()
+            }
         }
         .menuBarExtraStyle(.window)
 

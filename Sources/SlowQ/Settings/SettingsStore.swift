@@ -3,7 +3,7 @@ import Foundation
 @MainActor
 final class SettingsStore: ObservableObject {
     static let defaultDelayMs = 1_000
-    static let minDelayMs = 300
+    static let minDelayMs = 500
     static let maxDelayMs = 5_000
 
     private enum Keys {

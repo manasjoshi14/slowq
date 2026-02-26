@@ -2,41 +2,53 @@ import SwiftUI
 
 struct MenuContentView: View {
     @ObservedObject var coordinator: AppCoordinator
+    @ObservedObject private var settings: SettingsStore
+    private let openSettingsAction: () -> Void
+
+    init(coordinator: AppCoordinator, openSettingsAction: @escaping () -> Void = {}) {
+        self.coordinator = coordinator
+        _settings = ObservedObject(wrappedValue: coordinator.settings)
+        self.openSettingsAction = openSettingsAction
+    }
+
+    private var delayBinding: Binding<Double> {
+        Binding(
+            get: { Double(settings.delayMs) },
+            set: { settings.delayMs = Int($0.rounded()) }
+        )
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Toggle("Protection Enabled", isOn: $coordinator.settings.isProtectionEnabled)
-            Toggle("Launch at Login", isOn: $coordinator.settings.launchAtLogin)
-
-            Text("Delay: \(coordinator.settings.delayMs) ms")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            if coordinator.permissionState != .granted {
-                Button("Grant Accessibility Permission") {
-                    coordinator.requestPermissions()
-                }
-                Button("Open Accessibility Settings") {
-                    coordinator.openSystemSettings()
-                }
-            }
-
-            if let lastError = coordinator.lastError {
-                Text(lastError)
-                    .font(.caption)
-                    .foregroundStyle(.red)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            Toggle("Protection Enabled", isOn: $settings.isProtectionEnabled)
+            Toggle("Launch at Login", isOn: $settings.launchAtLogin)
 
             Divider()
-            Button("Open Settings") {
-                coordinator.showSettings()
+
+            HStack {
+                Text("Delay")
+                Spacer()
+                Text("\(settings.delayMs) ms")
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
             }
-            Button("Quit SlowQ") {
-                coordinator.quit()
-            }
+
+            Slider(
+                value: delayBinding,
+                in: Double(SettingsStore.minDelayMs)...Double(SettingsStore.maxDelayMs),
+                step: 50
+            )
+            .controlSize(.small)
+
+            Divider()
+
+            Button("Open Settings...", action: openSettingsAction)
+            Button("Quit SlowQ", role: .destructive, action: coordinator.quit)
         }
         .padding(12)
-        .frame(minWidth: 300)
+        .frame(width: 300)
+        .onAppear {
+            coordinator.refreshRuntimeState()
+        }
     }
 }

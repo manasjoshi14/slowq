@@ -12,7 +12,7 @@ This rewrite was built collaboratively with OpenAI Codex.
 
 - Menu bar app
 - Global `Cmd+Q` interception via Quartz event tap
-- Delay is user-adjustable (default `1000ms`, range `300ms` to `5000ms`)
+- Delay is user-adjustable (default `1000ms`, range `500ms` to `5000ms`)
 - Overlay is always shown during hold
 - Launch at login toggle
 - No app include/exclude list
@@ -22,7 +22,8 @@ This rewrite was built collaboratively with OpenAI Codex.
 
 - macOS 13+
 - Swift 6.2 toolchain
-- Accessibility permission for keyboard interception
+- Input Monitoring permission for keyboard interception (`ListenEvent`)
+- Accessibility permission may also be needed by some macOS builds
 
 ## Run Locally
 
@@ -30,7 +31,7 @@ This rewrite was built collaboratively with OpenAI Codex.
 swift run SlowQ
 ```
 
-Then grant Accessibility access when prompted.
+Then grant Input Monitoring access when prompted.
 
 ## Local Deploy (App Bundle)
 
