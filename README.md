@@ -1,6 +1,6 @@
 # SlowQ
 
-SlowQ is a modern macOS utility that prevents accidental quits by requiring users to **hold `Cmd+Q`** for a short delay before an app terminates.
+SlowQ is a native macOS menu bar app that prevents accidental app quits by requiring users to **hold `Cmd+Q`** for a configurable delay.
 
 ## Acknowledgement
 
@@ -8,56 +8,86 @@ SlowQ is a modern rewrite of the original [SlowQuitApps](https://github.com/dteo
 
 This rewrite was built collaboratively with OpenAI Codex.
 
-## v1 Scope
+## Features (Current Scope)
 
-- Menu bar app
-- Global `Cmd+Q` interception via Quartz event tap
-- Delay is user-adjustable (default `1000ms`, range `500ms` to `5000ms`)
-- Overlay is always shown during hold
-- Launch at login toggle
-- No app include/exclude list
-- No CLI (v1)
+- Menu bar utility (`LSUIElement`) with a native popover-style window
+- Global `Cmd+Q` interception using Quartz event tap
+- Hold-to-quit delay slider (`500ms` to `5000ms`, default `1000ms`)
+- Centered hold overlay shown while `Cmd+Q` is held
+- Launch at Login toggle
+- Settings window with permission controls and runtime diagnostics
+- No app include/exclude rules (intentionally out of scope)
 
 ## Requirements
 
 - macOS 13+
 - Swift 6.2 toolchain
-- Input Monitoring permission for keyboard interception (`ListenEvent`)
-- Accessibility permission may also be needed by some macOS builds
+- Input Monitoring permission (`ListenEvent`) for key interception
+- Accessibility permission may also be required on some macOS versions/configurations
 
-## Run Locally
+## Quick Start
+
+### Run from source
 
 ```bash
 swift run SlowQ
 ```
 
-Then grant Input Monitoring access when prompted.
-
-## Local Deploy (App Bundle)
-
-Use the helper script to build and install a local app bundle:
+### Install local app bundle
 
 ```bash
 ./scripts/install-local.sh
 ```
 
-This installs `/Applications/SlowQ.app` from the current source.
+This builds and installs:
 
-## Test
+- `/Applications/SlowQ.app`
+
+### Clean reinstall (recommended when permissions are stuck)
+
+```bash
+./scripts/reinstall-clean.sh
+```
+
+This removes the installed app, resets TCC for `io.github.manas.SlowQ`, reinstalls, and relaunches.
+
+## Permissions Setup
+
+After launch:
+
+1. Open SlowQ menu.
+2. Click `Open Settings...`.
+3. Click `Request Permission`.
+4. Enable SlowQ in macOS privacy settings (Input Monitoring, and Accessibility if needed).
+
+If protection still does not activate, run:
+
+```bash
+tccutil reset All io.github.manas.SlowQ
+./scripts/reinstall-clean.sh
+```
+
+## Developer Workflow
+
+### Tests
 
 ```bash
 swift test
 ```
 
-## Code Quality
+### Lint
 
-Run formatting explicitly when needed:
+```bash
+./scripts/lint.sh
+```
+
+### Format
 
 ```bash
 ./scripts/format.sh
 ```
 
-Run the full local quality gate:
+### Full quality gate
 
 ```bash
 ./scripts/check.sh
@@ -65,13 +95,22 @@ Run the full local quality gate:
 
 `scripts/check.sh` enforces:
 
-- strict swift-format lint (`swift format lint --strict`)
+- strict `swift-format` lint
 - warnings-as-errors for build and tests
-- coverage floor from `.quality/coverage_min.txt` (currently `50.0%`)
+- coverage threshold from `.quality/coverage_min.txt` (currently `50.0%`)
 
-## Settings Keys
+## Project Structure
 
-SlowQ stores settings in `UserDefaults` with namespaced keys:
+- `Sources/SlowQ/Interception`: global key interception and hold-to-quit engine
+- `Sources/SlowQ/Overlay`: quit-progress overlay window/presentation
+- `Sources/SlowQ/UI`: menu and settings SwiftUI views
+- `Sources/SlowQ/Permissions`: Input Monitoring / Accessibility permission abstraction
+- `Sources/SlowQ/Settings`: persisted user settings
+- `Tests/SlowQTests`: coordinator, permission service, and interception tests
+
+## Persisted Settings Keys
+
+SlowQ stores settings in `UserDefaults`:
 
 - `io.github.manas.SlowQ.delayMs`
 - `io.github.manas.SlowQ.isProtectionEnabled`
@@ -79,5 +118,6 @@ SlowQ stores settings in `UserDefaults` with namespaced keys:
 
 ## Notes
 
-- This rewrite starts with fresh settings (no auto-migration from SlowQuitApps).
-- Current focus is local build/deploy support (release pipeline deferred).
+- This rewrite does not migrate settings from the original SlowQuitApps app.
+- Current repo is focused on local build/install workflows; release notarization and distribution are not yet configured.
+- License: [MIT](LICENSE)
