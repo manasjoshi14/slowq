@@ -67,7 +67,8 @@ struct AccessibilityPermissionService {
 
     func requestListenPermission() -> Bool {
         if usesCGListenAccess {
-            return api.requestListenEventAccess()
+            _ = api.requestListenEventAccess()
+            return api.preflightListenEventAccess()
         }
         return api.isProcessTrustedWithPrompt()
     }

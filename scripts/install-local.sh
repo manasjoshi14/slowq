@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 APP_NAME="SlowQ"
 BUNDLE_ID="io.github.manas.SlowQ"
+SIGN_REQUIREMENT="designated => identifier \"${BUNDLE_ID}\""
 APP_BUNDLE="/tmp/${APP_NAME}.app"
 TARGET_APP="/Applications/${APP_NAME}.app"
 
@@ -45,16 +46,19 @@ cat > "$APP_BUNDLE/Contents/Info.plist" <<PLIST
     <string>13.0</string>
     <key>NSHighResolutionCapable</key>
     <true/>
+    <key>NSInputMonitoringUsageDescription</key>
+    <string>SlowQ needs Input Monitoring permission to intercept Cmd+Q and prevent accidental quits.</string>
 </dict>
 </plist>
 PLIST
 
-codesign --force --deep --sign - "$APP_BUNDLE"
+codesign --force --deep --sign - -r="$SIGN_REQUIREMENT" "$APP_BUNDLE"
 
 osascript -e "tell application \"${APP_NAME}\" to quit" >/dev/null 2>&1 || true
 rm -rf "$TARGET_APP"
 cp -R "$APP_BUNDLE" "$TARGET_APP"
-open "$TARGET_APP"
+open "$TARGET_APP" >/dev/null 2>&1 || true
 
 echo "Installed and launched: $TARGET_APP"
-echo "If interception does not work immediately, re-grant Accessibility permission for the new app bundle."
+echo "If protection is still inactive, run:"
+echo "  tccutil reset All ${BUNDLE_ID}"

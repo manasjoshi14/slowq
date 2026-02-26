@@ -45,7 +45,25 @@ struct AccessibilityPermissionServiceTests {
 
         #expect(service.preflightListenPermission())
         #expect(service.requestListenPermission())
-        #expect(api.preflightListenEventAccessCalls == 1)
+        #expect(api.preflightListenEventAccessCalls == 2)
+        #expect(api.requestListenEventAccessCalls == 1)
+        #expect(api.isProcessTrustedCalls == 0)
+        #expect(api.isProcessTrustedWithPromptCalls == 0)
+    }
+
+    @Test("CG path does not fall back to AX trust when listen access is unavailable")
+    func cgPathDoesNotFallBackToAX() {
+        let api = MockAccessibilityPermissionAPI()
+        api.preflightListenEventAccessResult = false
+        api.isProcessTrustedResult = true
+        api.requestListenEventAccessResult = false
+        api.isProcessTrustedWithPromptResult = true
+
+        let service = AccessibilityPermissionService(api: api, usesCGListenAccess: true)
+
+        #expect(service.preflightListenPermission() == false)
+        #expect(service.requestListenPermission() == false)
+        #expect(api.preflightListenEventAccessCalls == 2)
         #expect(api.requestListenEventAccessCalls == 1)
         #expect(api.isProcessTrustedCalls == 0)
         #expect(api.isProcessTrustedWithPromptCalls == 0)

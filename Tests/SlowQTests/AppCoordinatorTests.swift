@@ -119,12 +119,12 @@ struct AppCoordinatorTests {
         #expect(coordinator.lastError == nil)
     }
 
-    @Test("does not start interception when permission is denied")
-    func deniedPermissionPreventsInterception() {
+    @Test("reports permission error when interception cannot start without permission")
+    func deniedPermissionReportsPermissionError() {
         let settings = makeSettings(isProtectionEnabled: true)
         let permission = MockPermissionService(preflightResult: false, requestResult: false)
         let launch = MockLaunchAtLoginService(isEnabled: false)
-        let interception = MockInterceptionService(startResult: true)
+        let interception = MockInterceptionService(startResult: false)
 
         let coordinator = AppCoordinator(
             settings: settings,
@@ -134,11 +134,11 @@ struct AppCoordinatorTests {
             interceptionFactory: { _, _, _ in interception }
         )
 
-        #expect(permission.requestCalls == 1)
-        #expect(interception.startCalls == 0)
+        #expect(permission.requestCalls == 0)
+        #expect(interception.startCalls == 1)
         #expect(interception.stopCalls == 1)
         #expect(!coordinator.isInterceptionRunning)
-        #expect(coordinator.lastError?.contains("Accessibility permission") == true)
+        #expect(coordinator.lastError?.contains("Input Monitoring permission") == true)
     }
 
     @Test("launch-at-login sync is skipped when already matching")
@@ -215,6 +215,32 @@ struct AppCoordinatorTests {
 
         #expect(interception.startCalls == 1)
         #expect(interception.stopCalls >= 1)
+        #expect(!coordinator.isInterceptionRunning)
+    }
+
+    @Test("requestPermissions opens system settings when permission remains denied")
+    func requestPermissionsOpensSystemSettingsWhenDenied() {
+        let settings = makeSettings(isProtectionEnabled: true)
+        let permission = MockPermissionService(preflightResult: false, requestResult: false)
+        let launch = MockLaunchAtLoginService(isEnabled: false)
+        let interception = MockInterceptionService(startResult: false)
+        var openSystemSettingsCalls = 0
+
+        let coordinator = AppCoordinator(
+            settings: settings,
+            permissionService: permission,
+            launchAtLoginService: launch,
+            overlayController: MockOverlayController(),
+            systemSettingsOpener: { openSystemSettingsCalls += 1 },
+            interceptionFactory: { _, _, _ in interception }
+        )
+
+        #expect(openSystemSettingsCalls == 0)
+        coordinator.requestPermissions()
+        #expect(openSystemSettingsCalls == 1)
+        #expect(permission.requestCalls == 1)
+        #expect(interception.startCalls == 2)
+        #expect(interception.stopCalls == 2)
         #expect(!coordinator.isInterceptionRunning)
     }
 }
