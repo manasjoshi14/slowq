@@ -18,6 +18,26 @@ This rewrite was built collaboratively with OpenAI Codex.
 - Settings window with permission controls and runtime diagnostics
 - No app include/exclude rules (intentionally out of scope)
 
+## Screenshots
+
+### Cmd+Q Hold Overlay
+
+Cmd+Q hold overlay shown while quit protection is active.
+
+![Cmd+Q hold overlay](docs/images/cmdq-hold-overlay.png)
+
+### Settings Window
+
+Settings window with protection, delay slider, and permission status.
+
+![Settings window](docs/images/settings-window.png)
+
+### Menu Bar Popover
+
+Menu bar popover with quick toggles and delay control.
+
+![Menu bar popover](docs/images/menu-bar-popover.png)
+
 ## Requirements
 
 - macOS 13+
@@ -39,7 +59,7 @@ swift run SlowQ
 ./scripts/install-local.sh
 ```
 
-This quits any running instance, resets TCC permissions, builds a release bundle, installs to `/Applications/SlowQ.app`, and launches it.
+This builds a release bundle, installs to `/Applications/SlowQ.app`, and launches it.
 
 ## Permissions Setup
 
