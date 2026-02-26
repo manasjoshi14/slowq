@@ -8,6 +8,10 @@ SIGN_REQUIREMENT="designated => identifier \"${BUNDLE_ID}\""
 APP_BUNDLE="/tmp/${APP_NAME}.app"
 TARGET_APP="/Applications/${APP_NAME}.app"
 
+osascript -e "tell application \"${APP_NAME}\" to quit" >/dev/null 2>&1 || true
+rm -rf "$TARGET_APP"
+tccutil reset All "$BUNDLE_ID" >/dev/null 2>&1 || true
+
 cd "$ROOT_DIR"
 
 swift build -c release
@@ -54,11 +58,9 @@ PLIST
 
 codesign --force --deep --sign - -r="$SIGN_REQUIREMENT" "$APP_BUNDLE"
 
-osascript -e "tell application \"${APP_NAME}\" to quit" >/dev/null 2>&1 || true
-rm -rf "$TARGET_APP"
 cp -R "$APP_BUNDLE" "$TARGET_APP"
 open "$TARGET_APP" >/dev/null 2>&1 || true
 
-echo "Installed and launched: $TARGET_APP"
-echo "If protection is still inactive, run:"
-echo "  tccutil reset All ${BUNDLE_ID}"
+echo
+echo "Fresh install complete: $TARGET_APP"
+echo "Open SlowQ Settings, click Request Permission, and enable SlowQ in Input Monitoring."

@@ -39,17 +39,7 @@ swift run SlowQ
 ./scripts/install-local.sh
 ```
 
-This builds and installs:
-
-- `/Applications/SlowQ.app`
-
-### Clean reinstall (recommended when permissions are stuck)
-
-```bash
-./scripts/reinstall-clean.sh
-```
-
-This removes the installed app, resets TCC for `io.github.manas.SlowQ`, reinstalls, and relaunches.
+This quits any running instance, resets TCC permissions, builds a release bundle, installs to `/Applications/SlowQ.app`, and launches it.
 
 ## Permissions Setup
 
@@ -60,11 +50,10 @@ After launch:
 3. Click `Request Permission`.
 4. Enable SlowQ in macOS privacy settings (Input Monitoring, and Accessibility if needed).
 
-If protection still does not activate, run:
+If protection still does not activate, reinstall:
 
 ```bash
-tccutil reset All io.github.manas.SlowQ
-./scripts/reinstall-clean.sh
+./scripts/install-local.sh
 ```
 
 ## Developer Workflow

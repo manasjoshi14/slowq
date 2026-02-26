@@ -47,7 +47,7 @@ private final class FrostRailProgressView: NSView {
         let radius = railRect.height / 2
 
         let railPath = NSBezierPath(roundedRect: railRect, xRadius: radius, yRadius: radius)
-        NSColor(calibratedRed: 0.08, green: 0.14, blue: 0.22, alpha: 0.9).setFill()
+        NSColor.white.withAlphaComponent(0.15).setFill()
         railPath.fill()
 
         let fillWidth = railRect.width * progress
@@ -63,12 +63,8 @@ private final class FrostRailProgressView: NSView {
         )
 
         let fillPath = NSBezierPath(roundedRect: fillRect, xRadius: radius, yRadius: radius)
-        fillPath.addClip()
-        let gradient = NSGradient(colors: [
-            NSColor(calibratedRed: 0.20, green: 0.71, blue: 0.98, alpha: 1),
-            NSColor(calibratedRed: 0.15, green: 0.57, blue: 0.93, alpha: 1),
-        ])
-        gradient?.draw(in: fillRect, angle: 0)
+        NSColor.white.withAlphaComponent(0.85).setFill()
+        fillPath.fill()
     }
 }
 
@@ -81,22 +77,30 @@ final class OverlayController: @preconcurrency OverlayPresenting {
     private(set) var state: OverlayState = .hidden
 
     init() {
-        titleLabel = NSTextField(labelWithString: "Hold ⌘Q to Quit")
+        let iconView = NSImageView()
+        if let symbolImage = NSImage(systemSymbolName: "shield.lefthalf.filled", accessibilityDescription: "Shield") {
+            let config = NSImage.SymbolConfiguration(pointSize: 28, weight: .regular)
+            iconView.image = symbolImage.withSymbolConfiguration(config)
+        }
+        iconView.contentTintColor = .white
+        iconView.translatesAutoresizingMaskIntoConstraints = false
+
+        titleLabel = NSTextField(labelWithString: "Hold ⌘Q")
         titleLabel.alignment = .center
-        titleLabel.font = .systemFont(ofSize: 42, weight: .bold)
+        titleLabel.font = .systemFont(ofSize: 16, weight: .semibold)
         titleLabel.textColor = NSColor.white.withAlphaComponent(0.95)
 
         subtitleLabel = NSTextField(labelWithString: "")
         subtitleLabel.alignment = .center
-        subtitleLabel.font = .systemFont(ofSize: 24, weight: .semibold)
-        subtitleLabel.textColor = NSColor.white.withAlphaComponent(0.9)
+        subtitleLabel.font = .systemFont(ofSize: 12, weight: .regular)
+        subtitleLabel.textColor = NSColor.white.withAlphaComponent(0.7)
 
         progressView = FrostRailProgressView()
         progressView.wantsLayer = true
         progressView.layer?.masksToBounds = true
 
         panel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 680, height: 220),
+            contentRect: NSRect(x: 0, y: 0, width: 200, height: 180),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -114,32 +118,45 @@ final class OverlayController: @preconcurrency OverlayPresenting {
         material.blendingMode = .behindWindow
         material.state = .active
         material.wantsLayer = true
-        material.layer?.backgroundColor = NSColor(calibratedRed: 0.05, green: 0.11, blue: 0.20, alpha: 0.55).cgColor
-        material.layer?.cornerRadius = 26
-        material.layer?.masksToBounds = true
-        material.layer?.borderWidth = 1
-        material.layer?.borderColor = NSColor.white.withAlphaComponent(0.22).cgColor
+        material.maskImage = Self.roundedRectMask(cornerRadius: 20)
 
-        let stack = NSStackView(views: [titleLabel, subtitleLabel, progressView])
+        let stack = NSStackView(views: [iconView, titleLabel, subtitleLabel, progressView])
         stack.orientation = .vertical
         stack.alignment = .centerX
-        stack.spacing = 12
-        stack.setCustomSpacing(16, after: subtitleLabel)
+        stack.spacing = 8
         stack.translatesAutoresizingMaskIntoConstraints = false
 
         material.addSubview(stack)
 
         progressView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            progressView.widthAnchor.constraint(equalToConstant: 580),
-            progressView.heightAnchor.constraint(equalToConstant: 16),
-            stack.leadingAnchor.constraint(equalTo: material.leadingAnchor, constant: 24),
-            stack.trailingAnchor.constraint(equalTo: material.trailingAnchor, constant: -24),
-            stack.topAnchor.constraint(equalTo: material.topAnchor, constant: 30),
-            stack.bottomAnchor.constraint(equalTo: material.bottomAnchor, constant: -30),
+            iconView.widthAnchor.constraint(equalToConstant: 32),
+            iconView.heightAnchor.constraint(equalToConstant: 32),
+            progressView.widthAnchor.constraint(equalToConstant: 160),
+            progressView.heightAnchor.constraint(equalToConstant: 4),
+            stack.leadingAnchor.constraint(equalTo: material.leadingAnchor, constant: 20),
+            stack.trailingAnchor.constraint(equalTo: material.trailingAnchor, constant: -20),
+            stack.topAnchor.constraint(equalTo: material.topAnchor, constant: 24),
+            stack.bottomAnchor.constraint(equalTo: material.bottomAnchor, constant: -20),
         ])
 
         panel.contentView = material
+    }
+
+    private static func roundedRectMask(cornerRadius: CGFloat) -> NSImage {
+        let size = NSSize(width: cornerRadius * 2 + 1, height: cornerRadius * 2 + 1)
+        let image = NSImage(size: size, flipped: false) { rect in
+            NSBezierPath(roundedRect: rect, xRadius: cornerRadius, yRadius: cornerRadius).fill()
+            return true
+        }
+        image.capInsets = NSEdgeInsets(
+            top: cornerRadius,
+            left: cornerRadius,
+            bottom: cornerRadius,
+            right: cornerRadius
+        )
+        image.resizingMode = .stretch
+        return image
     }
 
     func show(appName: String, duration: TimeInterval) {

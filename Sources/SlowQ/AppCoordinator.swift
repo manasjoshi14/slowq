@@ -10,7 +10,8 @@ final class AppCoordinator: ObservableObject {
         "Failed to start keyboard interception. Another tool may be blocking event tap registration."
 
     @Published var settings: SettingsStore
-    @Published private(set) var permissionState: PermissionState
+    @Published private(set) var inputMonitoringState: PermissionState
+    @Published private(set) var accessibilityState: PermissionState
     @Published private(set) var isInterceptionRunning = false
     @Published var lastError: String?
 
@@ -35,7 +36,8 @@ final class AppCoordinator: ObservableObject {
         self.permissionService = permissionService
         self.launchAtLoginService = launchAtLoginService
         self.systemSettingsOpener = systemSettingsOpener ?? Self.defaultSystemSettingsOpener
-        self.permissionState = permissionService.preflightListenPermission() ? .granted : .denied
+        self.inputMonitoringState = permissionService.preflightListenPermission() ? .granted : .denied
+        self.accessibilityState = permissionService.isAccessibilityTrusted() ? .granted : .denied
         let factory =
             interceptionFactory ?? { isEnabledProvider, delayMsProvider, overlay in
                 QuitInterceptionService(
@@ -62,7 +64,7 @@ final class AppCoordinator: ObservableObject {
 
     func requestPermissions() {
         refreshPermissionState(requestIfNeeded: true)
-        if permissionState != .granted {
+        if inputMonitoringState != .granted {
             openSystemSettings()
         }
         reconcileInterception(isProtectionEnabled: settings.isProtectionEnabled)
@@ -103,17 +105,19 @@ final class AppCoordinator: ObservableObject {
     }
 
     private func refreshPermissionState(requestIfNeeded: Bool) {
+        accessibilityState = permissionService.isAccessibilityTrusted() ? .granted : .denied
+
         if permissionService.preflightListenPermission() {
-            permissionState = .granted
+            inputMonitoringState = .granted
             return
         }
 
         guard requestIfNeeded else {
-            permissionState = .denied
+            inputMonitoringState = .denied
             return
         }
 
-        permissionState = permissionService.requestListenPermission() ? .granted : .denied
+        inputMonitoringState = permissionService.requestListenPermission() ? .granted : .denied
     }
 
     private func reconcileInterception(isProtectionEnabled: Bool) {
@@ -125,8 +129,8 @@ final class AppCoordinator: ObservableObject {
 
         if interceptionService.start() {
             isInterceptionRunning = true
-            if permissionState != .granted {
-                permissionState = .granted
+            if inputMonitoringState != .granted {
+                inputMonitoringState = .granted
             }
             clearInterceptionErrorIfNeeded()
             return
@@ -134,7 +138,7 @@ final class AppCoordinator: ObservableObject {
 
         interceptionService.stop()
         isInterceptionRunning = false
-        if permissionState == .granted {
+        if inputMonitoringState == .granted {
             lastError = Self.interceptionStartErrorMessage
         } else {
             lastError = Self.permissionErrorMessage

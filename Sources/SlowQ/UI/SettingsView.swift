@@ -16,61 +16,104 @@ struct SettingsView: View {
         )
     }
 
-    var body: some View {
-        Form {
-            Section("Protection") {
-                Toggle("Enable Cmd+Q protection", isOn: $settings.isProtectionEnabled)
-                HStack {
-                    Text("Hold delay")
-                    Spacer()
-                    Text("\(settings.delayMs) ms")
-                        .monospacedDigit()
-                        .foregroundStyle(.secondary)
+    private var formattedDelay: String {
+        "\(settings.delayMs) ms"
+    }
+
+    @ViewBuilder
+    private func permissionRow(_ label: String, state: PermissionState) -> some View {
+        HStack {
+            Text(label)
+            Spacer()
+            if state == .granted {
+                Label("Granted", systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+            } else {
+                Button {
+                    coordinator.requestPermissions()
+                } label: {
+                    Label("Grant Access", systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
                 }
-                Slider(
-                    value: delayBinding,
-                    in: Double(SettingsStore.minDelayMs)...Double(SettingsStore.maxDelayMs),
-                    step: 50
-                )
-            }
-
-            Section("System") {
-                Toggle("Launch at Login", isOn: $settings.launchAtLogin)
-                Text("SlowQ always shows a progress overlay while Cmd+Q is held.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                HStack {
-                    Label(
-                        coordinator.permissionState == .granted
-                            ? "Input Monitoring Access Granted" : "Input Monitoring Access Needed",
-                        systemImage: coordinator.permissionState == .granted
-                            ? "checkmark.seal.fill" : "exclamationmark.triangle.fill"
-                    )
-                    .foregroundStyle(coordinator.permissionState == .granted ? .green : .yellow)
-
-                    Spacer()
-
-                    Button("Request Permission") {
-                        coordinator.requestPermissions()
-                    }
-                }
-
-                if coordinator.permissionState != .granted {
-                    Button("Open Input Monitoring Settings") {
-                        coordinator.openSystemSettings()
-                    }
-                }
-            }
-
-            if let lastError = coordinator.lastError {
-                Section("Diagnostics") {
-                    Text(lastError)
-                        .foregroundStyle(.red)
-                }
+                .buttonStyle(.plain)
             }
         }
-        .formStyle(.grouped)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(.headline)
+            .foregroundStyle(.secondary)
+    }
+
+    private static let cardShape = RoundedRectangle(cornerRadius: 8)
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                sectionHeader("Protection")
+                VStack(alignment: .leading, spacing: 12) {
+                    Toggle("Cmd+Q Protection", isOn: $settings.isProtectionEnabled)
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            Text("Hold Delay")
+                            Spacer()
+                            Text(formattedDelay)
+                                .monospacedDigit()
+                                .foregroundStyle(.secondary)
+                        }
+                        Slider(
+                            value: delayBinding,
+                            in: Double(SettingsStore.minDelayMs)...Double(SettingsStore.maxDelayMs),
+                            step: 50
+                        )
+                    }
+                    .disabled(!settings.isProtectionEnabled)
+                }
+                .padding(12)
+                .background(Color(.controlBackgroundColor))
+                .clipShape(Self.cardShape)
+
+                sectionHeader("System")
+                VStack(spacing: 0) {
+                    HStack {
+                        Text("Launch at Login")
+                        Spacer()
+                        Toggle("", isOn: $settings.launchAtLogin)
+                            .toggleStyle(.switch)
+                            .labelsHidden()
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+
+                    Divider()
+                    permissionRow("Input Monitoring", state: coordinator.inputMonitoringState)
+
+                    Divider()
+                    permissionRow("Accessibility", state: coordinator.accessibilityState)
+                }
+                .background(Color(.controlBackgroundColor))
+                .clipShape(Self.cardShape)
+
+                Text("SlowQ requires Input Monitoring and Accessibility permissions to intercept Cmd+Q. The overlay appears while the shortcut is held.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 4)
+
+                if let lastError = coordinator.lastError {
+                    sectionHeader("Diagnostics")
+                    Text(lastError)
+                        .foregroundStyle(.red)
+                        .padding(12)
+                        .background(Color(.controlBackgroundColor))
+                        .clipShape(Self.cardShape)
+                }
+            }
+            .padding()
+        }
         .onAppear {
             coordinator.refreshRuntimeState()
         }

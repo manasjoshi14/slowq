@@ -21,6 +21,10 @@ private final class MockPermissionService: PermissionServicing {
         requestCalls += 1
         return requestResult
     }
+
+    func isAccessibilityTrusted() -> Bool {
+        preflightResult
+    }
 }
 
 private enum MockLaunchError: Error {

@@ -10,6 +10,7 @@ enum PermissionState {
 protocol PermissionServicing {
     func preflightListenPermission() -> Bool
     func requestListenPermission() -> Bool
+    func isAccessibilityTrusted() -> Bool
 }
 
 protocol AccessibilityPermissionAPI {
@@ -71,6 +72,10 @@ struct AccessibilityPermissionService {
             return api.preflightListenEventAccess()
         }
         return api.isProcessTrustedWithPrompt()
+    }
+
+    func isAccessibilityTrusted() -> Bool {
+        api.isProcessTrusted()
     }
 }
 

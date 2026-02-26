@@ -17,6 +17,10 @@ private final class UISmokePermissionService: PermissionServicing {
     func requestListenPermission() -> Bool {
         granted
     }
+
+    func isAccessibilityTrusted() -> Bool {
+        granted
+    }
 }
 
 private final class UISmokeLaunchService: LaunchAtLoginControlling {

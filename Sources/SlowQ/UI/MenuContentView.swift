@@ -18,35 +18,95 @@ struct MenuContentView: View {
         )
     }
 
+    private var formattedDelay: String {
+        "\(settings.delayMs) ms"
+    }
+
+    private var statusTitle: String {
+        coordinator.isInterceptionRunning ? "Protection Active" : "Protection Paused"
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Toggle("Protection Enabled", isOn: $settings.isProtectionEnabled)
-            Toggle("Launch at Login", isOn: $settings.launchAtLogin)
+        VStack(spacing: 0) {
+            // Status hero
+            VStack(spacing: 4) {
+                Image(systemName: coordinator.menuBarSymbolName)
+                    .font(.system(size: 24))
+                    .foregroundStyle(coordinator.isInterceptionRunning ? .primary : .secondary)
+                Text(statusTitle)
+                    .font(.system(size: 13, weight: .semibold))
+            }
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity)
+            .opacity(coordinator.isInterceptionRunning ? 1 : 0.6)
 
             Divider()
+                .padding(.horizontal, 12)
+
+            // Toggles
+            HStack {
+                Text("Protection")
+                Spacer()
+                Toggle("", isOn: $settings.isProtectionEnabled)
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+            }
+            .padding(.horizontal, 16).padding(.vertical, 7)
 
             HStack {
-                Text("Delay")
+                Text("Launch at Login")
                 Spacer()
-                Text("\(settings.delayMs) ms")
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
+                Toggle("", isOn: $settings.launchAtLogin)
+                    .toggleStyle(.switch)
+                    .labelsHidden()
             }
+            .padding(.horizontal, 16).padding(.vertical, 7)
 
-            Slider(
-                value: delayBinding,
-                in: Double(SettingsStore.minDelayMs)...Double(SettingsStore.maxDelayMs),
-                step: 50
-            )
-            .controlSize(.small)
+            // Delay slider
+            VStack(spacing: 6) {
+                HStack {
+                    Text("Delay")
+                        .font(.system(size: 12))
+                    Spacer()
+                    Text(formattedDelay)
+                        .font(.system(size: 12))
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                }
+                Slider(
+                    value: delayBinding,
+                    in: Double(SettingsStore.minDelayMs)...Double(SettingsStore.maxDelayMs),
+                    step: 50
+                )
+                .controlSize(.small)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 6)
+            .disabled(!settings.isProtectionEnabled)
+            .opacity(settings.isProtectionEnabled ? 1 : 0.5)
 
-            Divider()
+            // Bottom actions
+            HStack {
+                Button("Settings\u{2026}") {
+                    openSettingsAction()
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .font(.system(size: 11))
 
-            Button("Open Settings...", action: openSettingsAction)
-            Button("Quit SlowQ", role: .destructive, action: coordinator.quit)
+                Spacer()
+
+                Button("Quit SlowQ") {
+                    coordinator.quit()
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .font(.system(size: 11))
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
         }
-        .padding(12)
-        .frame(width: 300)
+        .frame(width: 220)
         .onAppear {
             coordinator.refreshRuntimeState()
         }
