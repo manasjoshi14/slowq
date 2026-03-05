@@ -4,9 +4,7 @@ SlowQ is a native macOS menu bar app that prevents accidental app quits by requi
 
 ## Acknowledgement
 
-SlowQ is a modern rewrite of the original [SlowQuitApps](https://github.com/dteoh/SlowQuitApps) project by dteoh.
-
-This rewrite was built collaboratively with OpenAI Codex.
+SlowQ is derived from [SlowQuitApps](https://github.com/dteoh/SlowQuitApps) by dteoh — a complete rewrite in Swift with a new UI, overlay design, and simplified feature set tailored to my use case.
 
 ## Features (Current Scope)
 
@@ -129,4 +127,4 @@ SlowQ stores settings in `UserDefaults`:
 
 - This rewrite does not migrate settings from the original SlowQuitApps app.
 - Current repo is focused on local build/install workflows; release notarization and distribution are not yet configured.
-- License: [MIT](LICENSE)
+- License: [GPL v2](LICENSE) (derived from [SlowQuitApps](https://github.com/dteoh/SlowQuitApps))
