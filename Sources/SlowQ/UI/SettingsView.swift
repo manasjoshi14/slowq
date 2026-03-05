@@ -21,7 +21,7 @@ struct SettingsView: View {
     }
 
     @ViewBuilder
-    private func permissionRow(_ label: String, state: PermissionState) -> some View {
+    private func permissionRow(_ label: String, state: PermissionState, kind: PermissionKind) -> some View {
         HStack {
             Text(label)
             Spacer()
@@ -30,7 +30,7 @@ struct SettingsView: View {
                     .foregroundStyle(.green)
             } else {
                 Button {
-                    coordinator.requestPermissions()
+                    coordinator.requestPermission(kind)
                 } label: {
                     Label("Grant Access", systemImage: "exclamationmark.triangle.fill")
                         .foregroundStyle(.orange)
@@ -90,10 +90,10 @@ struct SettingsView: View {
                     .padding(.vertical, 8)
 
                     Divider()
-                    permissionRow("Input Monitoring", state: coordinator.inputMonitoringState)
+                    permissionRow("Input Monitoring", state: coordinator.inputMonitoringState, kind: .inputMonitoring)
 
                     Divider()
-                    permissionRow("Accessibility", state: coordinator.accessibilityState)
+                    permissionRow("Accessibility", state: coordinator.accessibilityState, kind: .accessibility)
                 }
                 .background(Color(.controlBackgroundColor))
                 .clipShape(Self.cardShape)

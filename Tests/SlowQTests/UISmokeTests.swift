@@ -4,22 +4,24 @@ import Testing
 @testable import SlowQ
 
 private final class UISmokePermissionService: PermissionServicing {
-    let granted: Bool
+    let inputMonitoringGranted: Bool
+    let accessibilityGranted: Bool
 
     init(granted: Bool) {
-        self.granted = granted
+        self.inputMonitoringGranted = granted
+        self.accessibilityGranted = granted
     }
 
     func preflightListenPermission() -> Bool {
-        granted
+        inputMonitoringGranted
     }
 
     func requestListenPermission() -> Bool {
-        granted
+        inputMonitoringGranted
     }
 
     func isAccessibilityTrusted() -> Bool {
-        granted
+        accessibilityGranted
     }
 }
 

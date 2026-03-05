@@ -2,6 +2,11 @@ import AppKit
 import Combine
 import SwiftUI
 
+enum PermissionKind {
+    case inputMonitoring
+    case accessibility
+}
+
 @MainActor
 final class AppCoordinator: ObservableObject {
     private static let permissionErrorMessage =
@@ -18,7 +23,7 @@ final class AppCoordinator: ObservableObject {
     private let permissionService: any PermissionServicing
     private let launchAtLoginService: any LaunchAtLoginControlling
     private let interceptionService: QuitInterceptionControlling
-    private let systemSettingsOpener: () -> Void
+    private let systemSettingsOpener: (PermissionKind) -> Void
     private var cancellables = Set<AnyCancellable>()
     private var fallbackSettingsWindowController: NSWindowController?
 
@@ -27,7 +32,7 @@ final class AppCoordinator: ObservableObject {
         permissionService: any PermissionServicing = AccessibilityPermissionService(),
         launchAtLoginService: any LaunchAtLoginControlling = LaunchAtLoginService(),
         overlayController: OverlayPresenting = OverlayController(),
-        systemSettingsOpener: (() -> Void)? = nil,
+        systemSettingsOpener: ((PermissionKind) -> Void)? = nil,
         interceptionFactory: (
             (@escaping () -> Bool, @escaping () -> Int, OverlayPresenting) -> QuitInterceptionControlling
         )? = nil
@@ -62,10 +67,15 @@ final class AppCoordinator: ObservableObject {
         isInterceptionRunning ? "shield.lefthalf.filled" : "shield"
     }
 
-    func requestPermissions() {
+    func requestPermission(_ kind: PermissionKind) {
         refreshPermissionState(requestIfNeeded: true)
-        if inputMonitoringState != .granted {
-            openSystemSettings()
+        switch kind {
+        case .inputMonitoring where inputMonitoringState != .granted:
+            openSystemSettings(for: .inputMonitoring)
+        case .accessibility where accessibilityState != .granted:
+            openSystemSettings(for: .accessibility)
+        default:
+            break
         }
         reconcileInterception(isProtectionEnabled: settings.isProtectionEnabled)
     }
@@ -75,8 +85,8 @@ final class AppCoordinator: ObservableObject {
         reconcileInterception(isProtectionEnabled: settings.isProtectionEnabled)
     }
 
-    func openSystemSettings() {
-        systemSettingsOpener()
+    func openSystemSettings(for kind: PermissionKind) {
+        systemSettingsOpener(kind)
     }
 
     func showSettings() {
@@ -193,27 +203,38 @@ final class AppCoordinator: ObservableObject {
         windowController.showWindow(nil)
     }
 
-    private static let defaultSystemSettingsOpener: () -> Void = {
+    private static let defaultSystemSettingsOpener: (PermissionKind) -> Void = { kind in
         NSApplication.shared.activate(ignoringOtherApps: true)
-        let appURL = URL(fileURLWithPath: "/System/Applications/System Settings.app")
-        _ = NSWorkspace.shared.open(appURL)
 
-        let candidates = [
-            "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension",
+        let inputMonitoringCandidates = [
             "x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent",
             "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_ListenEvent",
+        ]
+
+        let accessibilityCandidates = [
             "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility",
+        ]
+
+        let genericCandidates = [
             "x-apple.systempreferences:com.apple.preference.security?Privacy",
+            "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension",
             "x-apple.systempreferences:",
         ]
 
-        for candidate in candidates {
-            guard let url = URL(string: candidate) else {
-                continue
-            }
-            if NSWorkspace.shared.open(url) {
-                return
-            }
+        let candidates: [String]
+        switch kind {
+        case .inputMonitoring:
+            candidates = inputMonitoringCandidates + accessibilityCandidates + genericCandidates
+        case .accessibility:
+            candidates = accessibilityCandidates + inputMonitoringCandidates + genericCandidates
         }
+
+        for candidate in candidates {
+            guard let url = URL(string: candidate) else { continue }
+            if NSWorkspace.shared.open(url) { return }
+        }
+
+        let appURL = URL(fileURLWithPath: "/System/Applications/System Settings.app")
+        _ = NSWorkspace.shared.open(appURL)
     }
 }
